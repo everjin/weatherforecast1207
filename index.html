@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>경기도 실시간 날씨 정보</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .select-container {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        select {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 20px center;
+            padding-right: 50px;
+        }
+
+        select:hover {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .weather-info {
+            margin-top: 30px;
+            padding: 30px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 20px;
+            display: none;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .weather-info.show {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .weather-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .city-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .current-time {
+            font-size: 16px;
+            color: #666;
+        }
+
+        .weather-main {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .weather-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .weather-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .weather-card.large {
+            grid-column: 1 / -1;
+            padding: 30px;
+        }
+
+        .weather-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .temperature {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .weather-status {
+            font-size: 24px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .weather-label {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .weather-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .detail-item {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            text-align: center;
+            padding: 20px;
+            color: #e74c3c;
+            background: #ffeaea;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .weather-main {
+                grid-template-columns: 1fr;
+            }
+
+            .weather-card.large {
+                grid-column: 1;
+            }
+
+            .weather-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌤️ 경기도 날씨</h1>
+        
+        <div class="select-container">
+            <select id="citySelect">
+                <option value="">시를 선택하세요</option>
+                <option value="60,121">수원시</option>
+                <option value="56,129">고양시</option>
+                <option value="65,118">용인시</option>
+                <option value="63,124">성남시</option>
+                <option value="58,125">부천시</option>
+                <option value="59,123">안양시</option>
+                <option value="58,121">안산시</option>
+                <option value="57,114">평택시</option>
+                <option value="61,130">의정부시</option>
+                <option value="58,123">시흥시</option>
+                <option value="62,126">광명시</option>
+                <option value="64,119">하남시</option>
+            </select>
+        </div>
+
+        <button id="getWeatherBtn" onclick="getWeather()">날씨 조회하기</button>
+
+        <div id="weatherInfo" class="weather-info">
+            <div class="weather-header">
+                <div class="city-name" id="cityName"></div>
+                <div class="current-time" id="currentTime"></div>
+            </div>
+
+            <div class="weather-main">
+                <div class="weather-card large">
+                    <div class="weather-icon" id="weatherIcon">🌤️</div>
+                    <div class="temperature" id="temperature">--</div>
+                    <div class="weather-status" id="weatherStatus">--</div>
+                </div>
+            </div>
+
+            <div class="weather-details">
+                <div class="detail-item">
+                    <div class="weather-label">습도</div>
+                    <div class="weather-value" id="humidity">--</div>
+                </div>
+                <div class="detail-item">
+                    <div class="weather-label">강수확률</div>
+                    <div class="weather-value" id="pop">--</div>
+                </div>
+                <div class="detail-item">
+                    <div class="weather-label">풍속</div>
+                    <div class="weather-value" id="windSpeed">--</div>
+                </div>
+                <div class="detail-item">
+                    <div class="weather-label">강수형태</div>
+                    <div class="weather-value" id="pty">--</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            날씨 정보를 불러오는 중...
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        // 경기도 주요 시의 격자 좌표 정의
+        const cityCoordinates = {
+            '수원시': { nx: 60, ny: 121 },
+            '고양시': { nx: 56, ny: 129 },
+            '용인시': { nx: 65, ny: 118 },
+            '성남시': { nx: 63, ny: 124 },
+            '부천시': { nx: 58, ny: 125 },
+            '안양시': { nx: 59, ny: 123 },
+            '안산시': { nx: 58, ny: 121 },
+            '평택시': { nx: 57, ny: 114 },
+            '의정부시': { nx: 61, ny: 130 },
+            '시흥시': { nx: 58, ny: 123 },
+            '광명시': { nx: 62, ny: 126 },
+            '하남시': { nx: 64, ny: 119 }
+        };
+
+        const API_KEY = 'OaRLlfpKOXJH%2BFeghkAojoaSAQbb1bkFF9COvGfjixpiLkEYTHFLqIcBYqFb0HCrcX8H3A47X9QNiRpgcCXAOA%3D%3D';
+        const BASE_URL = 'https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst';
+
+        // 현재 시간 기준으로 base_date와 base_time 계산
+        function getBaseDateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+
+            // 기상청 API는 매일 02, 05, 08, 11, 14, 17, 20, 23시에 발표
+            // 현재 시간보다 이전의 가장 최근 발표 시간을 찾음
+            const baseTimes = [2, 5, 8, 11, 14, 17, 20, 23];
+            let baseTime = '0200';
+            let baseDate = `${year}${month}${day}`;
+
+            for (let i = baseTimes.length - 1; i >= 0; i--) {
+                if (hour >= baseTimes[i] || (hour === baseTimes[i] && minute >= 0)) {
+                    baseTime = String(baseTimes[i]).padStart(2, '0') + '00';
+                    break;
+                }
+            }
+
+            // 자정 이전 시간이면 전날 23시 데이터 사용
+            if (hour < 2) {
+                const yesterday = new Date(now);
+                yesterday.setDate(yesterday.getDate() - 1);
+                baseDate = `${yesterday.getFullYear()}${String(yesterday.getMonth() + 1).padStart(2, '0')}${String(yesterday.getDate()).padStart(2, '0')}`;
+                baseTime = '2300';
+            }
+
+            return { baseDate, baseTime };
+        }
+
+        // 날씨 상태에 따른 아이콘 반환
+        function getWeatherIcon(sky, pty) {
+            if (pty === '1' || pty === '2' || pty === '4') return '🌧️';
+            if (pty === '3') return '❄️';
+            if (sky === '1') return '☀️';
+            if (sky === '3') return '⛅';
+            if (sky === '4') return '☁️';
+            return '🌤️';
+        }
+
+        // 강수형태 텍스트 변환
+        function getPtyText(pty) {
+            const ptyMap = {
+                '0': '없음',
+                '1': '비',
+                '2': '비/눈',
+                '3': '눈',
+                '4': '소나기'
+            };
+            return ptyMap[pty] || '--';
+        }
+
+        // 하늘상태 텍스트 변환
+        function getSkyText(sky) {
+            const skyMap = {
+                '1': '맑음',
+                '3': '구름많음',
+                '4': '흐림'
+            };
+            return skyMap[sky] || '--';
+        }
+
+        // API 호출 및 날씨 정보 표시
+        async function getWeather() {
+            const citySelect = document.getElementById('citySelect');
+            const selectedValue = citySelect.value;
+
+            if (!selectedValue) {
+                alert('시를 선택해주세요.');
+                return;
+            }
+
+            const [nx, ny] = selectedValue.split(',').map(Number);
+            const selectedCity = citySelect.options[citySelect.selectedIndex].text;
+
+            // UI 업데이트
+            document.getElementById('weatherInfo').classList.remove('show');
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('getWeatherBtn').disabled = true;
+
+            try {
+                const { baseDate, baseTime } = getBaseDateTime();
+                const url = `${BASE_URL}?serviceKey=${API_KEY}&numOfRows=100&pageNo=1&dataType=JSON&base_date=${baseDate}&base_time=${baseTime}&nx=${nx}&ny=${ny}`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.response?.header?.resultCode !== '00') {
+                    throw new Error(data.response?.header?.resultMsg || 'API 호출 실패');
+                }
+
+                const items = data.response.body.items.item;
+                if (!items || items.length === 0) {
+                    throw new Error('날씨 데이터가 없습니다.');
+                }
+
+                // 현재 시간에 가장 가까운 데이터 추출
+                const now = new Date();
+                const currentHour = String(now.getHours()).padStart(2, '0');
+                const currentMinute = String(now.getMinutes()).padStart(2, '0');
+                const currentTimeStr = `${currentHour}${currentMinute}`;
+
+                // fcstDate와 fcstTime이 현재 시간과 가장 가까운 데이터 찾기
+                let weatherData = {
+                    TMP: null,  // 기온
+                    REH: null,  // 습도
+                    SKY: null,  // 하늘상태
+                    PTY: null,  // 강수형태
+                    POP: null,  // 강수확률
+                    WSD: null   // 풍속
+                };
+
+                // 현재 시간과 가장 가까운 예보 시간 찾기
+                const forecastTimes = ['00', '03', '06', '09', '12', '15', '18', '21'];
+                let targetFcstTime = '00';
+                
+                for (let i = forecastTimes.length - 1; i >= 0; i--) {
+                    const time = parseInt(forecastTimes[i]);
+                    if (now.getHours() >= time) {
+                        targetFcstTime = forecastTimes[i];
+                        break;
+                    }
+                }
+
+                const today = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+
+                items.forEach(item => {
+                    if (item.fcstDate === today && item.fcstTime === targetFcstTime + '00') {
+                        if (weatherData[item.category] === null) {
+                            weatherData[item.category] = item.fcstValue;
+                        }
+                    }
+                });
+
+                // 데이터가 없으면 가장 최근 데이터 사용
+                if (!weatherData.TMP) {
+                    const firstItem = items.find(item => item.category === 'TMP');
+                    if (firstItem) {
+                        const targetDate = firstItem.fcstDate;
+                        const targetTime = firstItem.fcstTime;
+                        items.forEach(item => {
+                            if (item.fcstDate === targetDate && item.fcstTime === targetTime) {
+                                if (weatherData[item.category] === null) {
+                                    weatherData[item.category] = item.fcstValue;
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // UI 업데이트
+                document.getElementById('cityName').textContent = selectedCity;
+                document.getElementById('currentTime').textContent = 
+                    `업데이트: ${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${currentHour}:${currentMinute}`;
+                
+                document.getElementById('temperature').textContent = 
+                    weatherData.TMP ? `${weatherData.TMP}°C` : '--';
+                
+                document.getElementById('humidity').textContent = 
+                    weatherData.REH ? `${weatherData.REH}%` : '--';
+                
+                document.getElementById('pop').textContent = 
+                    weatherData.POP ? `${weatherData.POP}%` : '--';
+                
+                document.getElementById('windSpeed').textContent = 
+                    weatherData.WSD ? `${weatherData.WSD}m/s` : '--';
+                
+                document.getElementById('pty').textContent = 
+                    getPtyText(weatherData.PTY || '0');
+                
+                const skyStatus = weatherData.SKY || '1';
+                const ptyStatus = weatherData.PTY || '0';
+                document.getElementById('weatherStatus').textContent = 
+                    ptyStatus !== '0' ? getPtyText(ptyStatus) : getSkyText(skyStatus);
+                
+                document.getElementById('weatherIcon').textContent = 
+                    getWeatherIcon(skyStatus, ptyStatus);
+
+                // 결과 표시
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('weatherInfo').classList.add('show');
+                document.getElementById('getWeatherBtn').disabled = false;
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 
+                    `오류가 발생했습니다: ${error.message}`;
+                document.getElementById('getWeatherBtn').disabled = false;
+            }
+        }
+
+        // Enter 키로도 조회 가능
+        document.getElementById('citySelect').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                getWeather();
+            }
+        });
+    </script>
+</body>
+</html>
+
